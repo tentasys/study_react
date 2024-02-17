@@ -2,7 +2,7 @@ import React, {FC, useCallback, useState, VFC} from "react";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
 import axios from "axios";
-import {Redirect} from "react-router";
+import {Redirect, useParams} from "react-router";
 import {
     AddButton,
     Channels,
@@ -18,7 +18,7 @@ import gravatar from 'gravatar'
 import {Link, Route, Switch} from "react-router-dom";
 import loadable from "@loadable/component";
 import Menu from "@components/Menu";
-import {IUser} from "@typings/db";
+import {IChannel, IUser} from "@typings/db";
 import {Button, Input, Label} from "@pages/SignUp/styles";
 import useInput from "@hooks/useInput";
 import Modal from "@components/Modal";
@@ -36,7 +36,12 @@ const Workspace: VFC = () => {
     const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
     const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
 
-    const { data: userData, error, mutate } = useSWR<IUser | false>('http://localhost:3095/api/users', fetcher);
+    const { workspace } = useParams<{ workspace: string}>();
+    const { data: userData, error, mutate } = useSWR<IUser | false>('http://localhost:3095/api/users', fetcher, {dedupingInterval: 2000,});
+    // 채널 데이터를 서버로부터 받아오기
+    const { data: channelData } = useSWR<IChannel[]>(
+        userData ? `http://localhost:3095/api/workspaces/${workspace}/channels` : null, // 조건부 요청. 로그인한 상태일 때만 가져온다.
+        fetcher);
 
     const onLogout = useCallback( () => {
         axios.post('http://localhost:3095/api/users/logout', null,{
@@ -145,12 +150,15 @@ const Workspace: VFC = () => {
                                 <button onClick={onLogout}>로그아웃</button>
                             </WorkspaceModal>
                         </Menu>
+                        {channelData?.map((v) => (
+                            <div>{v.name}</div>
+                        ))}
                     </MenuScroll>
                 </Channels>
                 <Chats>
                     <Switch>
-                        <Route path="/workspace/channel" component={Channel}/>
-                        <Route path="/workspace/dm" component={DirectMessage}/>
+                        <Route path="/workspace/:workspace/channel/:channel" component={Channel}/>
+                        <Route path="/workspace/:workspace/dm/:id" component={DirectMessage}/>
                     </Switch>
                 </Chats>
             </WorkspaceWrapper>
@@ -167,7 +175,7 @@ const Workspace: VFC = () => {
                     <Button type="submit">생성하기</Button>
                 </form>
             </Modal>
-            <CreateChannelModal show={showCreateChannelModal} onCloseModal={onCloseModal} />
+            <CreateChannelModal show={showCreateChannelModal} onCloseModal={onCloseModal} setShowCreateChannelModal={setShowCreateChannelModal}/>
         </div>
     );
 }

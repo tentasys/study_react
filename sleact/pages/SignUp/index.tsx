@@ -59,7 +59,7 @@ const SignIn = () => {
 
     //이 설정은 제일 마지막에 선언해줘야 한다. hook보다 위에서 선언하면 에러날 수 있다.
     if(data) {
-        return <Redirect to="/workspace/channel"/>;
+        return <Redirect to="/workspace/sleact/channel/일반"/>;
     }
 
     return (
