@@ -5,7 +5,6 @@ import useInput from "@hooks/useInput";
 import axios from "axios";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
-import {d} from "@pmmmwh/react-refresh-webpack-plugin/types/options";
 import {Redirect} from "react-router";
 
 const SignIn = () => {
