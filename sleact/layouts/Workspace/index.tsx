@@ -26,6 +26,8 @@ import {toast} from "react-toastify";
 import CreateChannelModal from "@components/CreateChannelModal";
 import InviteWorkspaceModal from "@components/InviteWorkspaceModal";
 import InviteChannelModal from "@components/InviteChannelModal";
+import DMList from "@components/DMList";
+import ChannelList from "@components/ChannelList";
 
 const Channel = loadable(() => import('@pages/Channel'))
 const DirectMessage = loadable(() => import('@pages/DirectMessage'))
@@ -41,14 +43,20 @@ const Workspace: VFC = () => {
     const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
 
     const { workspace } = useParams<{ workspace: string}>();
-    const { data: userData, error, mutate } = useSWR<IUser | false>('http://localhost:3095/api/users', fetcher, {dedupingInterval: 2000,});
+    // 유저 데이터
+    const { data: userData, error, mutate } = useSWR<IUser | false>('/api/users', fetcher, {dedupingInterval: 2000,});
     // 채널 데이터를 서버로부터 받아오기
     const { data: channelData } = useSWR<IChannel[]>(
-        userData ? `http://localhost:3095/api/workspaces/${workspace}/channels` : null, // 조건부 요청. 로그인한 상태일 때만 가져온다.
+        userData ? `/api/workspaces/${workspace}/channels` : null, // 조건부 요청. 로그인한 상태일 때만 가져온다.
         fetcher);
+    // 워크스페이스 내 멤버 데이터
+    const { mutate: memberData } = useSWR<IUser[]>(
+        userData ? `/api/workspaces/${workspace}/members` : null,
+        fetcher,
+    );
 
     const onLogout = useCallback( () => {
-        axios.post('http://localhost:3095/api/users/logout', null,{
+        axios.post('/api/users/logout', null,{
             withCredentials: true,
         })
             .then(() => {
@@ -74,7 +82,7 @@ const Workspace: VFC = () => {
         if (!newWorkspace || !newWorkspace.trim())  return; // 띄어쓰기 하나만 넣는 경우 방지
         if (!newUrl || !newUrl.trim())  return;
 
-        axios.post('http://localhost:3095/api/workspaces', {
+        axios.post('/api/workspaces', {
             workspace: newWorkspace,
             url: newUrl,
         }, {
@@ -165,9 +173,8 @@ const Workspace: VFC = () => {
                                 <button onClick={onLogout}>로그아웃</button>
                             </WorkspaceModal>
                         </Menu>
-                        {channelData?.map((v) => (
-                            <div>{v.name}</div>
-                        ))}
+                        <ChannelList/>
+                        <DMList/>
                     </MenuScroll>
                 </Channels>
                 <Chats>

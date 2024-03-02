@@ -17,16 +17,16 @@ interface Props {
 const CreateChannelModal: VFC<Props> = ({show, onCloseModal, setShowCreateChannelModal}) => {
     const [newChannel, onChangeNewChannel, setNewChannel] = useInput('');
     const { workspace, channel } = useParams<{ workspace: string, channel: string }>();
-    const { data: userData, error, mutate } = useSWR<IUser | false>('http://localhost:3095/api/users', fetcher, {dedupingInterval: 2000,});
+    const { data: userData, error, mutate } = useSWR<IUser | false>('/api/users', fetcher, {dedupingInterval: 2000,});
     // 채널 데이터를 서버로부터 받아오기
     const { data: channelData, mutate: mutateChannel} = useSWR<IChannel[]>(
-        userData ? `http://localhost:3095/api/workspaces/${workspace}/channels` : null, // 조건부 요청. 로그인한 상태일 때만 가져온다.
+        userData ? `/api/workspaces/${workspace}/channels` : null, // 조건부 요청. 로그인한 상태일 때만 가져온다.
         fetcher);
 
     const onCreateChannel = useCallback((e) => {
         e.preventDefault();
         console.log('채널 이름'+workspace)
-        axios.post(`http://localhost:3095/api/workspaces/${workspace}/channels`, {
+        axios.post(`/api/workspaces/${workspace}/channels`, {
             name: newChannel
         }, {
             withCredentials: true,

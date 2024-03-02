@@ -83,7 +83,7 @@ const config: Configuration = {
     devMiddleware: { publicPath: '/dist/' },
     proxy: {
       '/api/': {
-        target: "http://localhost:3095",
+        target: 'http://localhost:3095',
         changeOrigin: true
       }
     },
