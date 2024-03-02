@@ -1,10 +1,30 @@
 import React from "react";
-import Workspace from "@layouts/Workspace";
+import {Container, Header} from "@pages/DirectMessage/styles";
+import gravatar from "gravatar";
+import useSWR from "swr";
+import fetcher from "@utils/fetcher";
+import {useParams} from "react-router";
+import ChatBox from "@components/ChatBox";
+import ChatList from "@components/ChatList";
+
 const DirectMessage = () => {
-    return (
-        // <Workspace>
-            <div>DM 페이지</div>
-        // </Workspace>
+    const { workspace, id } = useParams<{ workspace: string, id: string }>();
+    const { data: userData } = useSWR(`/api/workspaces/${workspace}/users/${id}`, fetcher);
+    const { data: myData } = useSWR(`/api/users`, fetcher);
+
+    // 값이 없을 때 (로딩중일 때)는 화면 띄우지 않기
+    if(!userData || !myData) {
+        return null;
+    }
+
+    return (<Container>
+            <Header>
+                <img src={gravatar.url(userData.email, {s: '24px', d:'retro'})} alt={userData.nickname} />
+                <span>{userData.nickname}</span>
+            </Header>
+            <ChatList />
+            <ChatBox chat=""/>
+        </Container>
     );
 }
 
