@@ -7,16 +7,37 @@ import {useParams} from "react-router";
 import ChatBox from "@components/ChatBox";
 import ChatList from "@components/ChatList";
 import useInput from "@hooks/useInput";
+import axios from "axios";
+import useSWRInfinite from "swr/infinite";
+import {IDM} from "@typings/db";
 
 const DirectMessage = () => {
     const { workspace, id } = useParams<{ workspace: string, id: string }>();
     const { data: userData } = useSWR(`/api/workspaces/${workspace}/users/${id}`, fetcher);
     const { data: myData } = useSWR(`/api/users`, fetcher);
-    const [chat, onChangeChat] = useInput('');
+    const [chat, onChangeChat, setChat] = useInput('');
+
+    // 채팅 받아오기
+    const { data: chatData, mutate: mutateChat } = useSWR<IDM[]>(
+        `/api/workspaces/${workspace}/dms/${id}/chats?perPage=20&page=1`,
+        fetcher,
+    );
+
+    // 채팅 등록하기
     const onSubmitform = useCallback((e) => {
         e.preventDefault();
-        console.log('submit');
-    }, [])
+        console.log(chat);
+        if (chat?.trim()) {
+            axios.post(`/api/workspaces/${workspace}/dms/${id}/chats`, {
+                content: chat,
+            })
+                .then(() => {
+                    mutateChat();
+                    setChat('');    // 채팅 입력한 뒤에 기존 채팅창에 있는 글자 지우기
+                })
+                .catch(console.error);
+        }
+    }, [chat])
 
     // 값이 없을 때 (로딩중일 때)는 화면 띄우지 않기
     if(!userData || !myData) {
