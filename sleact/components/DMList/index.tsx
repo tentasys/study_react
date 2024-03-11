@@ -1,4 +1,4 @@
-// import useSocket from '@hooks/useSocket';
+import useSocket from '@hooks/useSocket';
 import { IDM, IUser, IUserWithOnline } from '@typings/db';
 import { CollapseButton } from '@components/DMList/styles';
 import fetcher from '@utils/fetcher';
@@ -16,7 +16,7 @@ const DMList: FC = () => {
         userData ? `/api/workspaces/${workspace}/members` : null,
         fetcher,
     );
-    // const [socket] = useSocket(workspace);
+    const [socket] = useSocket(workspace);
     const [channelCollapse, setChannelCollapse] = useState(false);  // collapsebutton에 대한 상태
     const [countList, setCountList] = useState<{ [key: string]: number } >({});
     const [onlineList, setOnlineList] = useState<number[]>([]);
@@ -54,18 +54,18 @@ const DMList: FC = () => {
         setCountList({});
     }, [workspace]);
 
-    // useEffect(() => {
-    //     socket?.on('onlineList', (data: number[]) => {
-    //         setOnlineList(data);
-    //     });
+    useEffect(() => {
+        socket?.on('onlineList', (data: number[]) => {
+            setOnlineList(data);
+        });
         // socket?.on('dm', onMessage);
         // console.log('socket on dm', socket?.hasListeners('dm'), socket);
-        // return () => {
+        return () => {
             // socket?.off('dm', onMessage);
             // console.log('socket off dm', socket?.hasListeners('dm'));
-            // socket?.off('onlineList');
-        // };
-    // }, [socket]);
+            socket?.off('onlineList');
+        };
+    }, [socket]);
 
     return (
         <>

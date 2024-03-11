@@ -1,4 +1,4 @@
-import React, {FC, useCallback, useState, VFC} from "react";
+import React, {FC, useCallback, useEffect, useState, VFC} from "react";
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
 import axios from "axios";
@@ -28,6 +28,7 @@ import InviteWorkspaceModal from "@components/InviteWorkspaceModal";
 import InviteChannelModal from "@components/InviteChannelModal";
 import DMList from "@components/DMList";
 import ChannelList from "@components/ChannelList";
+import useSocket from "@hooks/useSocket";
 
 const Channel = loadable(() => import('@pages/Channel'))
 const DirectMessage = loadable(() => import('@pages/DirectMessage'))
@@ -54,6 +55,22 @@ const Workspace: VFC = () => {
         userData ? `/api/workspaces/${workspace}/members` : null,
         fetcher,
     );
+    const [socket, disconnect] = useSocket(workspace);
+
+    // 연결 할 때 사용
+    useEffect(() => {
+        if (channelData && userData && socket) {
+            console.log(socket);
+            socket.emit('login', {id: userData.id, channels: channelData.map((v) => v.id)});
+        }
+    }, [socket, channelData, userData]);
+
+    // 연결 끊어졌을 때) 워크스페이스가 바뀌었을 때 기존 워크스페이스 정리
+    useEffect(() => {
+        return() => {
+            disconnect();
+        }
+    }, [workspace, disconnect]);
 
     const onLogout = useCallback( () => {
         axios.post('/api/users/logout', null,{
