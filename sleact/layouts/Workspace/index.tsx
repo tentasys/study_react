@@ -51,7 +51,7 @@ const Workspace: VFC = () => {
         userData ? `/api/workspaces/${workspace}/channels` : null, // 조건부 요청. 로그인한 상태일 때만 가져온다.
         fetcher);
     // 워크스페이스 내 멤버 데이터
-    const { mutate: memberData } = useSWR<IUser[]>(
+    const { data: memberData } = useSWR<IUser[]>(
         userData ? `/api/workspaces/${workspace}/members` : null,
         fetcher,
     );
