@@ -1,4 +1,4 @@
-import React, {useCallback, useRef} from "react";
+import React, {useCallback, useEffect, useRef} from "react";
 import {Container, Header} from "@pages/DirectMessage/styles";
 import gravatar from "gravatar";
 import useSWR from "swr";
@@ -9,7 +9,7 @@ import ChatList from "@components/ChatList";
 import useInput from "@hooks/useInput";
 import axios from "axios";
 import useSWRInfinite from "swr/infinite";
-import {IDM} from "@typings/db";
+import {IDM, IUser} from "@typings/db";
 import makeSection from "@utils/makeSection";
 import {Scrollbars} from "react-custom-scrollbars";
 
@@ -32,17 +32,40 @@ const DirectMessage = () => {
     const onSubmitform = useCallback((e) => {
         e.preventDefault();
         console.log(chat);
-        if (chat?.trim()) {
+        if (chat?.trim() && chatData) {
+            const savedChat = chat;
+            mutateChat((prevChatData) => {
+                prevChatData?.[0].unshift({
+                    id: (chatData[0][0]?.id || 0) + 1,
+                    content :savedChat,
+                    SenderId: myData.id,
+                    Sender: myData,
+                    ReceiverId: userData.id,
+                    Receiver: userData,
+                    createdAt: new Date(),
+                });
+                return prevChatData;
+            }, false)
+                .then(() => {
+                    setChat('');    // 채팅 입력한 뒤에 기존 채팅창에 있는 글자 지우기
+                    scrollbarRef.current?.scrollToBottom();
+                });
             axios.post(`/api/workspaces/${workspace}/dms/${id}/chats`, {
                 content: chat,
             })
                 .then(() => {
                     mutateChat();
-                    setChat('');    // 채팅 입력한 뒤에 기존 채팅창에 있는 글자 지우기
                 })
                 .catch(console.error);
         }
-    }, [chat])
+    }, [chat, chatData, myData, userData, workspace, id])
+
+    // 로딩 시 스크롤바 제일 아래로
+    useEffect(() => {
+        if (chatData?.length === 1) {
+            scrollbarRef.current?.scrollToBottom();
+        }
+    }, [chatData])
 
     // 값이 없을 때 (로딩중일 때)는 화면 띄우지 않기
     if(!userData || !myData) {
@@ -56,7 +79,7 @@ const DirectMessage = () => {
                 <img src={gravatar.url(userData.email, {s: '24px', d:'retro'})} alt={userData.nickname} />
                 <span>{userData.nickname}</span>
             </Header>
-            <ChatList chatSections={chatSections} ref={scrollbarRef} setSize={setSize} isEmpty={isEmpty} isReachingEnd={isReachingEnd}/>
+            <ChatList chatSections={chatSections} scrollRef={scrollbarRef} setSize={setSize} isReachingEnd={isReachingEnd}/>
             <ChatBox chat={chat} onChangeChat={onChangeChat} onSubmitForm={onSubmitform}/>
         </Container>
     );
