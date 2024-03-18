@@ -12,6 +12,7 @@ import useSWRInfinite from "swr/infinite";
 import {IDM, IUser} from "@typings/db";
 import makeSection from "@utils/makeSection";
 import {Scrollbars} from "react-custom-scrollbars";
+import useSocket from "@hooks/useSocket";
 
 const DirectMessage = () => {
     const { workspace, id } = useParams<{ workspace: string, id: string }>();
@@ -24,7 +25,7 @@ const DirectMessage = () => {
         (index) => `/api/workspaces/${workspace}/dms/${id}/chats?perPage=20&page=${index + 1}`,
         fetcher,
     );
-
+    const [socket] = useSocket(workspace);
     const isEmpty = chatData?.[0]?.length === 0;
     const isReachingEnd = isEmpty || (chatData && chatData[chatData.length -1]?.length < 20) || false;
     const scrollbarRef = useRef<Scrollbars>(null);
@@ -60,12 +61,47 @@ const DirectMessage = () => {
         }
     }, [chat, chatData, myData, userData, workspace, id])
 
+    const onMessage = useCallback((data: IDM) => {
+        // id는 상대방 아이디
+        if (data.SenderId === Number(id) && myData.id !== Number(id)) { // 내 아이디가 아닌것에 대해서만 mutate
+            // 가장 최근 데이터 가져온다
+            mutateChat((chatData) => {
+                chatData?.[0].unshift(data);
+                return chatData;
+            }, false).then(() => {
+                // 스크롤바 고정
+                // 내가 보내는 채팅 -> 스크롤바가 아래로 붙는다.
+                // 남이 보내는 채팅 -> 스크롤바가 아래로 붙지 않도록 스크롤바 고정 처리
+                if (scrollbarRef.current) {
+                    if (
+                        scrollbarRef.current.getScrollHeight() <
+                        scrollbarRef.current.getClientHeight() + scrollbarRef.current.getScrollTop() + 150  // 내가 150픽셀 이상으로 쳤을 때는 스크롤바가 내려가지 않도록 함
+                    ) {
+                        console.log('scrollToBottom!', scrollbarRef.current?.getValues());
+                        setTimeout(() => {
+                            scrollbarRef.current?.scrollToBottom();
+                        }, 50);
+                    }
+                }
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        socket?.on('dm', onMessage);
+        return () =>{
+            socket?.off('dm', onMessage);
+        }
+    }, [socket, onMessage]);
+
     // 로딩 시 스크롤바 제일 아래로
     useEffect(() => {
         if (chatData?.length === 1) {
-            scrollbarRef.current?.scrollToBottom();
+            setTimeout(() => {
+                scrollbarRef.current?.scrollToBottom();
+            }, 100);
         }
-    }, [chatData])
+    }, [chatData]);
 
     // 값이 없을 때 (로딩중일 때)는 화면 띄우지 않기
     if(!userData || !myData) {
