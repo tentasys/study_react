@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {Container, Header} from "@pages/Channel/styles";
+import {Container, DragOver, Header} from "@pages/Channel/styles";
 import ChatBox from "@components/ChatBox";
 import ChatList from "@components/ChatList";
 import useInput from "@hooks/useInput";
@@ -32,6 +32,7 @@ const Channel = () => {
     const isReachingEnd = isEmpty || (chatData && chatData[chatData.length -1]?.length < 20) || false;
     const scrollbarRef = useRef<Scrollbars>(null);
     const [showInviteChannelModal, setShowInviteChannelModal] = useState(false);
+    const [dragOver, setDragOver] = useState(false);
 
     // 채팅 등록하기
     const onSubmitform = useCallback((e) => {
@@ -67,7 +68,7 @@ const Channel = () => {
 
     const onMessage = useCallback((data: IChat) => {
         // id는 상대방 아이디
-        if (data.Channel.name === channel && data.UserId !== myData?.id) { // 내 아이디가 아닌것에 대해서만 mutate
+        if (data.Channel.name === channel && (data.content.startsWith('uploads\\') || data.UserId !== myData?.id)) { // 내 아이디가 아닌것에 대해서만 mutate
             // 가장 최근 데이터 가져온다
             mutateChat((chatData) => {
                 chatData?.[0].unshift(data);
@@ -115,13 +116,61 @@ const Channel = () => {
         setShowInviteChannelModal(false);
     }, []);
 
+    const onChangeFile = useCallback((e) => {
+      const formData = new FormData();
+      if (e.target.files) {
+        // Use DataTransferItemList interface to access the file(s)
+        for (let i = 0; i < e.target.files.length; i++) {
+          const file = e.target.files[i];
+          console.log('... file[' + i + '].name = ' + file.name);
+          formData.append('image', file);
+        }
+      }
+      axios.post(`/api/workspaces/${workspace}/channels/${channel}/images`, formData).then(() => {});
+    }, []);
+
+    const onDrop = useCallback(
+        (e) => {
+            e.preventDefault();
+            console.log(e);
+            const formData = new FormData();
+            if (e.dataTransfer.items) {
+                // use DataTransferItemList interface to access the file(s)
+                for(let i= 0; i<e.dataTransfer.items.length; i++) {
+                    // If dropped items aren't files, reject them
+                    if(e.dataTransfer.items[i].kind === 'file') {
+                        const file = e.dataTransfer.items[i].getAsFile();
+                        console.log('...file['+i+'].name = '+file.name);
+                        formData.append('image', file);
+                    }
+                }
+            } else {
+                // use Datatransfer interface to access the file(s)
+                for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                    console.log('...file['+i+'].name = '+e.dataTransfer.files[i].name);
+                    formData.append('image', e.dataTransfer.files[i]);
+                }
+            }
+            axios.post(`/api/workspaces/${workspace}/channels/${channel}/images`, formData).then(() => {
+                setDragOver(false);
+                mutateChat();
+            })
+        }, []
+    );
+
+    const onDragOver = useCallback((e) => {
+        e.preventDefault();
+        console.log(e);
+        setDragOver(true);
+    }, [mutateChat, workspace, channel]);
+
     // 값이 없을 때 (로딩중일 때)는 화면 띄우지 않기
     if(!myData) {
         return null;
     }
 
     const chatSections = makeSection(chatData ? chatData.flat().reverse() : [])
-    return (<Container>
+    return (<Container onDrop={onDrop} onDragOver={onDragOver}>
             <Header>
                 <span>#{channel}</span>
                 <div className="header-right">
@@ -139,6 +188,8 @@ const Channel = () => {
             <ChatList chatSections={chatSections} scrollRef={scrollbarRef} setSize={setSize} isReachingEnd={isReachingEnd}/>
             <ChatBox chat={chat} onChangeChat={onChangeChat} onSubmitForm={onSubmitform}/>
             <InviteChannelModal show={showInviteChannelModal} onCloseModal={onCloseModal} setShowInviteChannelModal={setShowInviteChannelModal}></InviteChannelModal>
+            <input type="file" multiple onChange={onChangeFile}/>
+            {dragOver && <DragOver>업로드!</DragOver>}
         </Container>
     );
 }
