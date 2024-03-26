@@ -53,6 +53,7 @@ const Channel = () => {
                 return prevChatData;
             }, false)
                 .then(() => {
+                    localStorage.setItem(`${workspace}-${channel}`, new Date().getTime().toString());
                     setChat('');    // 채팅 입력한 뒤에 기존 채팅창에 있는 글자 지우기
                     scrollbarRef.current?.scrollToBottom();
                 });
@@ -108,6 +109,10 @@ const Channel = () => {
         }
     }, [chatData]);
 
+    useEffect(() => {
+        localStorage.setItem(`${workspace}-${channel}`, new Date().getTime().toString());
+    }, [workspace, channel]);
+
     const onClickInviteChannel = useCallback(() => {
         setShowInviteChannelModal(true);
     }, []);
@@ -153,6 +158,7 @@ const Channel = () => {
             }
             axios.post(`/api/workspaces/${workspace}/channels/${channel}/images`, formData).then(() => {
                 setDragOver(false);
+                localStorage.setItem(`${workspace}-${channel}`, new Date().getTime().toString());
                 mutateChat();
             })
         }, []

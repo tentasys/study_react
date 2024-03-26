@@ -51,6 +51,7 @@ const DirectMessage = () => {
                 return prevChatData;
             }, false)
                 .then(() => {
+                    localStorage.setItem(`${workspace}-${id}`, new Date().getTime().toString());
                     setChat('');    // 채팅 입력한 뒤에 기존 채팅창에 있는 글자 지우기
                     scrollbarRef.current?.scrollToBottom();
                 });
@@ -106,6 +107,10 @@ const DirectMessage = () => {
         }
     }, [chatData]);
 
+    useEffect(() => {
+        localStorage.setItem(`${workspace}-${id}`, new Date().getTime().toString());
+    }, [workspace, id]);
+
     const onDrop = useCallback(
         (e) => {
             e.preventDefault();
@@ -130,6 +135,7 @@ const DirectMessage = () => {
             }
             axios.post(`/api/workspaces/${workspace}/dms/${id}/images`, formData).then(() => {
                 setDragOver(false);
+                localStorage.setItem(`${workspace}-${id}`, new Date().getTime().toString());
                 mutateChat();
             })
         }, []

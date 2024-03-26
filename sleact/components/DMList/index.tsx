@@ -6,6 +6,7 @@ import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { NavLink } from 'react-router-dom';
 import useSWR from 'swr';
+import EachDM from "@components/EachDM";
 
 const DMList: FC = () => {
     // 라우터 파라미터(:workspace)
@@ -84,29 +85,7 @@ const DMList: FC = () => {
                     // 워크스페이스에 참여한 멤버 데이터를 불러와서 반복문을 돈다.
                     memberData?.map((member) => {
                         const isOnline = onlineList.includes(member.id);
-                        const count = countList[member.id] || 0;
-                        return (
-                            <NavLink
-                                key={member.id}
-                                activeClassName="selected"
-                                to={`/workspace/${workspace}/dm/${member.id}`}
-                                onClick={resetCount(member.id)}
-                            >
-                                <i
-                                    className={`c-icon p-channel_sidebar__presence_icon p-channel_sidebar__presence_icon--dim_enabled c-presence ${
-                                        isOnline ? 'c-presence--active c-icon--presence-online' : 'c-icon--presence-offline'
-                                    }`}
-                                    aria-hidden="true"
-                                    data-qa="presence_indicator"
-                                    data-qa-presence-self="false"
-                                    data-qa-presence-active="false"
-                                    data-qa-presence-dnd="false"
-                                />
-                                <span className={count > 0 ? 'bold' : undefined}>{member.nickname}</span>
-                                {member.id === userData?.id && <span> (나)</span>}
-                                {count > 0 && <span className='count'>{count}</span>}
-                            </NavLink>
-                        );
+                        return <EachDM member={member} isOnline={isOnline} key={member.id} />;
                     })}
             </div>
         </>

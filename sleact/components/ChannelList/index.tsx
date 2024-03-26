@@ -6,6 +6,7 @@ import { useLocation, useParams } from 'react-router';
 import { NavLink } from 'react-router-dom';
 import useSWR from "swr";
 import fetcher from "@utils/fetcher";
+import EachChannel from "@components/EachChannel";
 
 const ChannelList: FC = () => {
     const { workspace } = useParams<{ workspace?: string }>();
@@ -58,15 +59,6 @@ const ChannelList: FC = () => {
         });
     };
 
-    // useEffect(() => {
-    //     socket?.on('message', onMessage);
-    //     console.log('socket on message', socket?.hasListeners('message'));
-    //     return () => {
-    //         socket?.off('message', onMessage);
-    //         console.log('socket off message', socket?.hasListeners('message'));
-    //     };
-    // }, [socket]);
-
     return (
         <>
             <h2>
@@ -82,18 +74,7 @@ const ChannelList: FC = () => {
             <div>
                 {!channelCollapse &&
                     channelData?.map((channel) => {
-                        const count = countList[`c-${channel.id}`];
-                        return (
-                            <NavLink
-                                key={channel.name}
-                                activeClassName="selected"
-                                to={`/workspace/${workspace}/channel/${channel.name}`}
-                                onClick={resetCount(`c-${channel.id}`)}
-                            >
-                                <span className={count !== undefined && count >= 0 ? 'bold' : undefined}># {channel.name}</span>
-                                {count !== undefined && count > 0 && <span className="count">{count}</span>}
-                            </NavLink>
-                        );
+                        return <EachChannel channel={channel} key={channel.id}/>;
                     })}
             </div>
         </>
